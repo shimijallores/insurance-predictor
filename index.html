@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurance Cost Predictor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-neutral-100 text-neutral-950">
+    <main class="flex min-h-screen items-center justify-center px-4 py-10">
+        <section class="w-full max-w-3xl border border-neutral-900 bg-white lg:w-1/2">
+            <div class="border-b border-neutral-900 px-6 py-5 sm:px-8">
+                <p class="text-xs uppercase tracking-[0.3em] text-neutral-500">Midterm Project</p>
+                <h1 class="mt-2 text-2xl font-semibold sm:text-3xl">Insurance Cost Predictor</h1>
+                <p class="mt-2 text-sm text-neutral-600">
+                    Enter the required details to estimate medical insurance cost using linear regression.
+                </p>
+            </div>
+
+            <form id="prediction-form" class="grid gap-4 px-6 py-6 sm:grid-cols-2 sm:px-8">
+                <label class="flex flex-col gap-2 text-sm">
+                    <span>Age</span>
+                    <input class="h-11 border border-neutral-900 px-3 outline-none transition focus:bg-neutral-100" type="number" name="age" min="18" max="100" required>
+                </label>
+
+                <label class="flex flex-col gap-2 text-sm">
+                    <span>Sex</span>
+                    <select class="h-11 border border-neutral-900 bg-white px-3 outline-none transition focus:bg-neutral-100" name="sex" required>
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                    </select>
+                </label>
+
+                <label class="flex flex-col gap-2 text-sm">
+                    <span>BMI</span>
+                    <input class="h-11 border border-neutral-900 px-3 outline-none transition focus:bg-neutral-100" type="number" name="bmi" min="10" max="60" step="0.01" required>
+                </label>
+
+                <label class="flex flex-col gap-2 text-sm">
+                    <span>Number of Children</span>
+                    <input class="h-11 border border-neutral-900 px-3 outline-none transition focus:bg-neutral-100" type="number" name="children" min="0" max="10" required>
+                </label>
+
+                <label class="flex flex-col gap-2 text-sm">
+                    <span>Smoking Status</span>
+                    <select class="h-11 border border-neutral-900 bg-white px-3 outline-none transition focus:bg-neutral-100" name="smoker" required>
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                    </select>
+                </label>
+
+                <label class="flex flex-col gap-2 text-sm">
+                    <span>Region</span>
+                    <select class="h-11 border border-neutral-900 bg-white px-3 outline-none transition focus:bg-neutral-100" name="region" required>
+                        <option value="northeast">Northeast</option>
+                        <option value="northwest">Northwest</option>
+                        <option value="southeast">Southeast</option>
+                        <option value="southwest">Southwest</option>
+                    </select>
+                </label>
+
+                <div class="sm:col-span-2 flex flex-col gap-4 pt-2">
+                    <button class="h-12 border border-neutral-900 bg-neutral-900 text-sm font-medium uppercase tracking-[0.2em] text-white transition hover:bg-neutral-700" type="submit">
+                        Predict Cost
+                    </button>
+
+                    <div id="result" class="hidden border border-neutral-900 bg-neutral-100 px-4 py-4">
+                        <p class="text-xs uppercase tracking-[0.3em] text-neutral-500">Predicted Insurance Cost</p>
+                        <p id="result-value" class="mt-2 text-3xl font-semibold"></p>
+                    </div>
+
+                    <p id="error-message" class="hidden text-sm text-neutral-700"></p>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+        const form = document.getElementById("prediction-form");
+        const resultBox = document.getElementById("result");
+        const resultValue = document.getElementById("result-value");
+        const errorMessage = document.getElementById("error-message");
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            errorMessage.classList.add("hidden");
+
+            const formData = new FormData(form);
+            const payload = {
+                age: Number(formData.get("age")),
+                sex: formData.get("sex"),
+                bmi: Number(formData.get("bmi")),
+                children: Number(formData.get("children")),
+                smoker: formData.get("smoker"),
+                region: formData.get("region")
+            };
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error("Prediction request failed.");
+                }
+
+                const data = await response.json();
+                resultValue.textContent = data.formatted_cost;
+                resultBox.classList.remove("hidden");
+            } catch (error) {
+                resultBox.classList.add("hidden");
+                errorMessage.textContent = "Unable to generate a prediction right now. Make sure the Flask app is running and the model file exists.";
+                errorMessage.classList.remove("hidden");
+            }
+        });
+    </script>
+</body>
+</html>
