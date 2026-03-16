@@ -7,12 +7,25 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
+from sklearn.preprocessing import FunctionTransformer, OneHotEncoder
 
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / "dataset" / "insurance.csv"
 MODEL_PATH = BASE_DIR / "insurance_model.pkl"
+
+
+def engineer_features(X: pd.DataFrame) -> pd.DataFrame:
+    X = X.copy()
+    smoker = (X["smoker"] == "yes").astype(float)
+    X["smoker_bmi"] = smoker * X["bmi"]
+    X["smoker_age"] = smoker * X["age"]
+    X["age_sq"] = X["age"] ** 2
+    X["bmi_sq"] = X["bmi"] ** 2
+    X["obese"] = (X["bmi"] >= 30).astype(float)
+    X["smoker_obese"] = smoker * X["obese"]
+    X["age_bmi"] = X["age"] * X["bmi"]
+    return X
 
 
 def main() -> None:
@@ -22,7 +35,12 @@ def main() -> None:
     y = df["charges"]
 
     categorical_features = ["sex", "smoker", "region"]
-    numeric_features = ["age", "bmi", "children"]
+    numeric_features = [
+        "age", "bmi", "children",
+        "smoker_bmi", "smoker_age",
+        "age_sq", "bmi_sq",
+        "obese", "smoker_obese", "age_bmi",
+    ]
 
     preprocessor = ColumnTransformer(
         transformers=[
@@ -33,8 +51,8 @@ def main() -> None:
 
     model = Pipeline(
         steps=[
+            ("feature_engineering", FunctionTransformer(engineer_features)),
             ("preprocessor", preprocessor),
-            ("polynomial", PolynomialFeatures(degree=2, include_bias=False)),
             ("regressor", LinearRegression()),
         ]
     )
@@ -51,6 +69,7 @@ def main() -> None:
     r2 = r2_score(y_test, predictions)
 
     print("Linear Regression Evaluation Metrics")
+    print("Using domain-specific feature engineering")
     print(f"R2 Score: {r2:.4f}")
     print(f"Mean Squared Error: {mse:.4f}")
     print(f"Mean Absolute Error: {mae:.4f}")
