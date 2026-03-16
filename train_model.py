@@ -7,7 +7,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import OneHotEncoder, PolynomialFeatures
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -34,6 +34,7 @@ def main() -> None:
     model = Pipeline(
         steps=[
             ("preprocessor", preprocessor),
+            ("polynomial", PolynomialFeatures(degree=2, include_bias=False)),
             ("regressor", LinearRegression()),
         ]
     )
